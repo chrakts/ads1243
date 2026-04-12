@@ -1,0 +1,75 @@
+#include "ads1243_class.h"
+
+// ==== DRDY warten ====
+void ADS1243_class::ADS1243_WaitDRDY()
+{
+    while (_drdyPort->IN & _drdyPin);
+}
+
+// ==== Reset ====
+void ADS1243_class::ADS1243_Reset()
+{
+    select();
+    SPI_MasterTransceiveByte(&_spi, ADS1243_CMD_RESET);
+    unselect();
+
+    // kleines Delay nötig (~0.6 ms laut Datenblatt)
+    for (volatile uint32_t i = 0; i < 50000; i++);
+}
+
+// ==== Register schreiben ====
+void ADS1243_class::ADS1243_WriteReg(uint8_t reg, uint8_t value) {
+    select();
+
+    SPI_MasterTransceiveByte(&_spi, ADS1243_CMD_WREG | reg);
+    SPI_MasterTransceiveByte(&_spi, 0x00); // 1 Register
+    SPI_MasterTransceiveByte(&_spi, value);
+
+    unselect();
+}
+
+// ==== Register lesen ====
+uint8_t ADS1243_class::ADS1243_ReadReg(uint8_t reg) {
+    uint8_t val;
+
+    select();
+
+    SPI_MasterTransceiveByte(&_spi, ADS1243_CMD_RREG | reg);
+    SPI_MasterTransceiveByte(&_spi, 0x00);
+
+    val = SPI_MasterTransceiveByte(&_spi, 0xFF);
+
+    unselect();
+
+    return val;
+}
+
+// ==== Daten lesen (24 Bit) ====
+int32_t ADS1243_class::ADS1243_ReadData()
+{
+    uint8_t b1, b2, b3;
+    int32_t result;
+
+    ADS1243_WaitDRDY();
+
+    select();
+
+    SPI_MasterTransceiveByte(&_spi, ADS1243_CMD_RDATA);
+
+    b1 = SPI_MasterTransceiveByte(&_spi, 0xFF);
+    b2 = SPI_MasterTransceiveByte(&_spi, 0xFF);
+    b3 = SPI_MasterTransceiveByte(&_spi, 0xFF);
+
+    unselect();
+
+    result = ((int32_t)b1 << 16) |
+             ((int32_t)b2 << 8)  |
+             (int32_t)b3;
+
+    // Sign extension (24 → 32 Bit)
+    if (result & 0x800000) {
+        result |= 0xFF000000;
+    }
+
+    return result;
+}
