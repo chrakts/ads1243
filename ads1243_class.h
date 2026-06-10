@@ -39,14 +39,20 @@ class ADS1243_class : public spiDevice
                    bool clk2x,
                    SPI_PRESCALER_t clockDivision,
                    PORT_t *drdyPort,
-                   uint8_t drdyPin)
+                   uint8_t drdyPin,
+                   PORT_t *pwrDnPort,
+                   uint8_t pwrDnPin)
       : spiDevice(module, spiPort, csPort, csPin, lsbFirst, mode, intLevel, clk2x, clockDivision),
         _drdyPort(drdyPort),
-        _drdyPin(drdyPin)
+        _drdyPin(drdyPin),
+        _pwrDnPort(pwrDnPort),
+        _pwrDnPin(pwrDnPin)
     {
       unselect();
       // DataReady als Eingang
       _drdyPort->DIRCLR = _drdyPin;
+      // PwrDown als Ausgang
+      _pwrDnPort->DIRSET = _pwrDnPin;
 
 
     }
@@ -66,6 +72,8 @@ class ADS1243_class : public spiDevice
   private:
     PORT_t *_drdyPort;
     uint8_t _drdyPin;
+    PORT_t *_pwrDnPort;
+    uint8_t _pwrDnPin;
 
   public:
     void ADS1243_Reset();
@@ -73,6 +81,8 @@ class ADS1243_class : public spiDevice
     uint8_t ADS1243_ReadReg(uint8_t reg);
     int32_t ADS1243_ReadData();
     void ADS1243_WaitDRDY();
+    void ADS1243_PowerDown();
+    void ADS1243_PowerUp();
 
 };
 

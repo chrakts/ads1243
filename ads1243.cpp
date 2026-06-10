@@ -7,6 +7,18 @@ void ADS1243_class::ADS1243_WaitDRDY()
     while (_drdyPort->IN & _drdyPin);
 }
 
+void ADS1243_class::ADS1243_PowerDown()
+{
+  _pwrDnPort->OUTCLR = _pwrDnPin;
+
+}
+
+void ADS1243_class::ADS1243_PowerUp()
+{
+  _pwrDnPort->OUTSET = _pwrDnPin;
+
+}
+
 // ==== Reset ====
 void ADS1243_class::ADS1243_Reset()
 {
